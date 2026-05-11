@@ -7,7 +7,14 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-from config import GROQ_API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER
+import os
+try:
+    from config import GROQ_API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER
+except ImportError:
+    GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
+    EMAIL_SENDER = os.environ.get('EMAIL_SENDER')
+    EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')
+    EMAIL_RECEIVER = os.environ.get('EMAIL_RECEIVER')
 
 PORTFOLIO = {
     "COALINDIA":  "COALINDIA.NS",

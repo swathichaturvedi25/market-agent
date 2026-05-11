@@ -1,0 +1,34 @@
+name: Market Digest
+
+on:
+  schedule:
+    - cron: '0 4 * * 1-5'   # 9:30 AM IST (IST = UTC+5:30)
+    - cron: '30 10 * * 1-5' # 4:00 PM IST
+  workflow_dispatch:          # allows manual trigger from GitHub
+
+jobs:
+  send_summary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install yfinance requests
+
+      - name: Run market summary
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
+        run: |
+          if [ "$(date +%H)" -lt "12" ]; then
+            python3 market_summary.py open
+          else
+            python3 market_summary.py close
+          fi
