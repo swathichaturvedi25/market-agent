@@ -8,13 +8,12 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 try:
-    from config import GROQ_API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER, NEWS_API_KEY
+    from config import GROQ_API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER
 except ImportError:
     GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
     EMAIL_SENDER = os.environ.get('EMAIL_SENDER')
     EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')
     EMAIL_RECEIVER = os.environ.get('EMAIL_RECEIVER')
-    NEWS_API_KEY = os.environ.get('NEWS_API_KEY', '')
 
 PORTFOLIO = {
     "COALINDIA":  "COALINDIA.NS",
@@ -88,46 +87,30 @@ TARGETS = {
     "AMARAJABAT": 1050,
 }
 
-
 def get_indian_market_news():
     try:
-        url = "https://newsapi.org/v2/everything"
-        params = {
-            "q": "India stock market OR Nifty OR Sensex OR RBI OR BSE OR NSE",
-            "language": "en",
-            "sortBy": "publishedAt",
-            "pageSize": 10,
-            "apiKey": NEWS_API_KEY
-        }
-        resp = requests.get(url, params=params)
-        articles = resp.json().get('articles', [])
-        if not articles:
-            return "No news available"
-        raw_news = "\n".join([
-            f"- {a['title']} ({a['source']['name']})"
-            for a in articles[:10]
-            if a['title'] and '[Removed]' not in a['title']
-        ])
-        prompt = f"""You are an Indian market analyst. From these headlines pick only the ones that could meaningfully impact Indian stock markets today. Ignore fluff and opinion pieces.
+        prompt = """You are an Indian stock market analyst. List the 5 most impactful Indian market news stories from TODAY or YESTERDAY that could affect stock prices.
 
-Headlines:
-{raw_news}
+Focus on: RBI decisions, government policy, FII/DII flows, major corporate results, global events affecting India, sector specific news.
 
-For each impactful headline write:
+For each story write:
 📰 [HEADLINE]
 💡 Impact: [1 sentence on how this affects Indian markets or specific sectors]
 
-Only include genuinely market moving news. No filler."""
+Be specific with actual news. No generic statements."""
 
         ai_resp = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
             headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-            json={"model": "llama-3.3-70b-versatile", "messages": [{"role": "user", "content": prompt}], "max_tokens": 800}
+            json={
+                "model": "llama-3.3-70b-versatile",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 800
+            }
         )
         return ai_resp.json()['choices'][0]['message']['content']
     except Exception as e:
         return f"News unavailable: {str(e)}"
-
 
 def get_index_data():
     indices = {
